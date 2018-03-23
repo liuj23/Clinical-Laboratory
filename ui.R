@@ -3,7 +3,7 @@ library(ggplot2)
 library(DT)
 library(zoo)
 library(forecast)
-library(shinyapps)
+library(rsconnect)
 library(date)
 shinyUI(fluidPage(
         title = 'Demand Forecasting',
