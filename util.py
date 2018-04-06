@@ -57,3 +57,15 @@ def get_fiscal_year(datetime):
         return year
     else:
         return year + 1
+
+
+def filter_df(df, filters_dict, include=True):
+    if include:
+        for key in filters_dict:
+            df = df[df[key].isin(filters_dict[key])]
+
+    else:
+        for key in filters_dict:
+            df = df[~df[key].isin(filters_dict[key])]
+    return df
+

@@ -4,7 +4,8 @@ import matplotlib.pyplot as plt
 from datetime import date
 import util as utl
 
-def preprocess_volumes_data():
+
+def pre_process_volumes_data():
     ref_dept = pd.read_csv('input_data\\reference_tables\\ref_dept_domain.csv')
     tv = pd.read_csv('input_data\\test_volumes\\prov_test_volumes.csv')
     tv = pd.merge(tv, ref_dept, on='Department')
@@ -13,11 +14,8 @@ def preprocess_volumes_data():
     excluded_domains = ['Procurement - Exclude', 'Only MHDL Category - Exclude']
     include_filters = {'Service_Type': included_service_type}
     exclude_filters = {'Domain': excluded_domains}
-    for key in include_filters:
-        tv = tv[tv[key].isin(include_filters[key])]
-
-    for key in exclude_filters:
-        tv = tv[~tv[key].isin(exclude_filters[key])]
+    tv = utl.filter_df(tv, include_filters, include=True)
+    tv = utl.filter_df(tv, exclude_filters, include=False)
     agg_col = ['Count']
     # grouping_cols = ['Domain', 'Performing Zone', 'LIS', 'Month_Year']
     grouping_cols = ['Domain', 'Performing Zone', 'Month_Year']
@@ -120,7 +118,7 @@ def format_ahs_expenses():
 
 
 if __name__ == "__main__":
-    # preprocess_volumes_data()
+    pre_process_volumes_data()
     # df = load_cls_expenses()
     # add_cls_expenses_conformed_columns(df)
     # format_cls_expenses()
