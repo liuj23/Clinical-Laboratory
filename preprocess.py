@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from datetime import date
-
+import util as utl
 
 def preprocess_volumes_data():
     ref_dept = pd.read_csv('input_data\\reference_tables\\ref_dept_domain.csv')
@@ -21,19 +21,8 @@ def preprocess_volumes_data():
     agg_col = ['Count']
     # grouping_cols = ['Domain', 'Performing Zone', 'LIS', 'Month_Year']
     grouping_cols = ['Domain', 'Performing Zone', 'Month_Year']
-    file_agg_writer(tv, grouping_cols, agg_col, root='processed\\test\\')
+    utl.file_agg_writer(tv, grouping_cols, agg_col, root='processed\\volumes\\')
     return
-
-
-def parse_bill_code(bill_code):
-    org_cd, site_cd, fn_cd = bill_code.split('.')
-    return [org_cd, site_cd, fn_cd]
-
-
-def parse_bill_code_df(df):
-    cds = df.apply(parse_bill_code)
-    cds = np.asarray(cds.tolist())
-    return cds
 
 
 def load_cls_expenses(root_dir='input_data/CLS_expenses/',
@@ -55,12 +44,12 @@ def load_cls_expenses(root_dir='input_data/CLS_expenses/',
     return combined
 
 
-def add_cls_expenses_conformed_columns(df):
+def conform_cls_expenses(df):
     # Parse Functional String
     df['org_cd'] = -1
     df['site_cd'] = -1
     df['fn_cd'] = -1
-    df[['org_cd', 'site_cd', 'fn_cd']] = parse_bill_code_df(df['AHS Functional String'])
+    df[['org_cd', 'site_cd', 'fn_cd']] = utl.parse_bill_code_df(df['AHS Functional String'])
     df['org_cd'] = df['org_cd'].astype(int)
     df['site_cd'] = df['site_cd'].astype(int)
     df['fn_cd'] = df['fn_cd'].astype(np.int64)
@@ -90,50 +79,14 @@ def add_cls_expenses_conformed_columns(df):
     return df
 
 
-def get_title(tupleName):
-    if type(tupleName) == str:
-        return tupleName.replace(' ', '_')
-    name = ''
-    print tupleName
-    for i in tupleName:
-        # print i
-        name += '_' + str(i)
-    return name.replace(' ', '_')
-
-
-def file_agg_writer(df, grouped_cols, agg_col, root='processed\\test\\'):
-    all_cols = grouped_cols + agg_col
-    df = df[all_cols]
-    grouped = df.groupby(grouped_cols)
-    output = grouped.aggregate(np.sum)
-    for idx in output.index.map(lambda x: x[:-1]).unique():
-        extract = output.ix[idx]
-        points = extract.shape[0]
-        total = int(np.sum(extract))
-        title = root + 'T' + str(total) + '_' + 'P' + str(points) + get_title(idx)
-        plt.plot(extract, marker='.')
-        plt.xlabel(grouped_cols[-1])
-        plt.ylabel(agg_col[0])
-        plt.title(get_title(idx))
-        plt.savefig(title)
-        plt.clf()
-        extract['date'] = extract.index
-        extract.index = range(points)
-        extract['index'] = range(points)
-        cols_out = ['index', 'date'] + agg_col
-        extract[cols_out].to_csv(title + '.csv', index=False)
-    return
-
-
 def format_cls_expenses():
-    reqd_cols = ['cost', 'cost_type', 'Domain', 'Zone', 'Fiscal Period']
     combined = load_cls_expenses()
-    combined = add_cls_expenses_conformed_columns(combined)
+    combined = conform_cls_expenses(combined)
     agg_col = ['cost']
     grouping_cols = ['cost_type', 'Domain', 'Zone', 'Fiscal Period']
-    combined['fiscal_year'] = combined['Fiscal Period'].apply(lambda x: get_fiscal_year(x))
-    grouping_cols = ['cost_type', 'Domain', 'Zone', 'fiscal_year']
-    file_agg_writer(combined, grouping_cols, agg_col)
+    combined['fiscal_year'] = combined['Fiscal Period'].apply(lambda x: utl.get_fiscal_year(x))
+    # grouping_cols = ['cost_type', 'Domain', 'Zone', 'fiscal_year']
+    utl.file_agg_writer(combined, grouping_cols, agg_col, root='processed\\costs\\')
 
 
 def format_ahs_expenses():
@@ -156,7 +109,7 @@ def format_ahs_expenses():
        u'16-Nov', u'16-Dec', u'Unnamed: 26', u'18-Jan', u'18-Feb', u'18-Mar',
        u'17-Apr', u'17-May', u'17-Jun', u'17-Jul', u'17-Aug', u'17-Sep',
        u'17-Oct', u'17-Nov', u'17-Dec'], var_name='date', value_name='cost')
-    cds = input['bill_code'].apply(parse_bill_code)
+    cds = input['bill_code'].apply(utl.parse_bill_code)
     cds = np.asarray(cds.tolist())
     input['org_cd'] = -1
     input['site_cd'] = -1
@@ -165,23 +118,12 @@ def format_ahs_expenses():
     input['cost'] = input['cost'].fillna(0)
     return input
 
-def get_fiscal_year(datetime):
-    year = datetime.year
-    month = datetime.month
-    if month < 4:
-        return year
-    else:
-        return year + 1
-
-
-
 
 if __name__ == "__main__":
-    preprocess_volumes_data()
+    # preprocess_volumes_data()
     # df = load_cls_expenses()
     # add_cls_expenses_conformed_columns(df)
     # format_cls_expenses()
-    # parse_bill_code('221.0000.71105009975')
+    # utl.utl.parse_bill_code('221.0000.71105009975')
     # print format_ahs_expenses()
-
-    # print get_fiscal_year(date(2008, 12, 24))
+    # print utl.get_fiscal_year(date(2008, 12, 24))
