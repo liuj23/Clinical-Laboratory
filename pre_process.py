@@ -77,6 +77,16 @@ def conform_cls_expenses(df):
     return df
 
 
+def pre_process_cls_expenses():
+    required_columns = ['Zone', 'Domain', 'cost_type', 'Fiscal Period', 'cost']
+    combined = load_cls_expenses()
+    combined = conform_cls_expenses(combined)
+    combined = combined[required_columns]
+    combined = combined.groupby(['Zone', 'Domain', 'Fiscal Period', 'cost_type'])['cost'].sum().unstack('cost_type')
+    combined.to_csv('processed\\costs\\cls_expenses.csv')
+
+
+
 def format_cls_expenses():
     combined = load_cls_expenses()
     combined = conform_cls_expenses(combined)
@@ -118,10 +128,11 @@ def format_ahs_expenses():
 
 
 if __name__ == "__main__":
-    pre_process_volumes_data()
+    # pre_process_volumes_data()
     # df = load_cls_expenses()
     # add_cls_expenses_conformed_columns(df)
     # format_cls_expenses()
     # utl.utl.parse_bill_code('221.0000.71105009975')
     # print format_ahs_expenses()
     # print utl.get_fiscal_year(date(2008, 12, 24))
+    pre_process_cls_expenses()
