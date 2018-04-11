@@ -33,7 +33,7 @@ shinyUI(fluidPage(
                                             choices = c("Day of the week", "Month of the year")),
                                 sliderInput("EstimatedPoints",                                  
                                             "Number of points to be estimated:",
-                                            min = 1, max = 50, value = 6, step = 1),
+                                            min = 1, max = 75, value = 6, step = 1),
                                 tags$hr(),
                                 sliderInput("Points_In_Pattern", "Number of observations in a cycle:",
                                             min = 1, max = 50, value = 7, step = 1),
