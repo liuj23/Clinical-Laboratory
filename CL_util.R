@@ -39,6 +39,9 @@ process_data <- function(filename){
   if (dataFreq=="Two-Weeks"){SeriesFreq<-26}
   if (dataFreq=="Month of the year")    {SeriesFreq<-12}
   if (dataFreq=="Year")     {SeriesFreq<-1}
+  
+
+
   TSeries<<-ts(RecordedTravelTime,  frequency=SeriesFreq,start=c(year,mon+1))#start=c(2011,4), delta=1
   #                                l    = mean(RecordedTravelTime[1:patternFreq])
   #                                b    = (RecordedTravelTime[patternFreq]-RecordedTravelTime[1])/(patternFreq-1)
@@ -72,10 +75,10 @@ process_data <- function(filename){
   
   tindex <-(c(1:Number_PointsToEstimate)+ length(RecordedTravelTime))*tick ## to to adjust the tick jump Done!
   TimeStampInFuture <<-as.Date(tindex, StartDate)
-  
   if (dataFreq=="Month of the year")            {TimeStampInFuture<-format((TimeStampInFuture-tick), format="%B %Y")}
   if (dataFreq=="Day of the week"  )            {TimeStampInFuture<-format((TimeStampInFuture-tick), format="%B %d %Y")}
-  
+  TimeStampInFuture = as.Date(time(pAdd), format="%m/%d/%Y") 
+
   
   MyEstimatedDataHWAdd <<- list(TimeStampInFuture,Estimated_ValueHWAdd,UpperLimitHWAdd,LowerLimitHWAdd)
   
@@ -106,6 +109,7 @@ lapply(files, function(x){
   process_data(filename)
 })
 
-
-warnings()
+# 
+# process_data("pre_processed/volumes_JL/V553889_N82_Central_Esoteric.csv")
+# warnings()
 
