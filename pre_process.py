@@ -19,8 +19,83 @@ def pre_process_volumes_data():
     agg_col = ['Count']
     # grouping_cols = ['Domain', 'Performing Zone', 'LIS', 'Month_Year']
     grouping_cols = ['Domain', 'Performing Zone', 'Month_Year']
-    utl.file_agg_writer(tv, grouping_cols, agg_col, root='processed\\volumes\\')
+    utl.file_agg_writer(tv, grouping_cols, agg_col, root='pre_processed\\volumes\\')
     return
+
+
+def pre_process_plc_category_counts():
+    tv = pd.read_csv('input_data\\test_volumes\\PLC_category_counts_testing.csv')
+    ref_dept = pd.read_csv('input_data\\reference_tables\\ref_dept_domain.csv')
+    tv = pd.merge(tv, ref_dept, left_on='DEPARTMENT', right_on='Department')
+    tv['Month_Year'] = pd.to_datetime(tv['MONTHID'], format='%Y-%m')
+    print tv.columns
+    print tv['SUBDISCIPLINE_DETAIL'].unique()
+    # included_service_type = ['Testing']
+    # included_performing_site = ['Peter Lougheed Centre']
+    excluded_departments = ['Respiratory']
+    excluded_subdiscipline = ['Blood Gas']
+    # include_filters = {'Service_Type': included_service_type, 'Performing Site': included_performing_site}
+    exclude_filters = {'DEPARTMENT': excluded_departments, 'SUBDISCIPLINE_DETAIL': excluded_subdiscipline}
+    # tv = utl.filter_df(tv, include_filters, include=True)
+    tv = utl.filter_df(tv, exclude_filters, include=False)
+    agg_col = ['TEST_COUNT']
+    grouping_cols = ['Domain', 'Month_Year']
+    utl.file_agg_writer(tv, grouping_cols, agg_col, root='pre_processed\\volumes\\PLC\\')
+
+
+def pre_process_plc_volumes_data():
+    ref_dept = pd.read_csv('input_data\\reference_tables\\ref_dept_domain.csv')
+    tv = pd.read_csv('input_data\\test_volumes\\prov_test_volumes.csv')
+    tv = pd.merge(tv, ref_dept, on='Department')
+    tv['Month_Year'] = pd.to_datetime(tv['Month_Year'], format='%Y-%m')
+    included_service_type = ['Testing']
+    included_performing_site = ['Peter Lougheed Centre']
+    excluded_domains = ['Procurement - Exclude', 'Only MHDL Category - Exclude']
+    include_filters = {'Service_Type': included_service_type, 'Performing Site': included_performing_site}
+    exclude_filters = {'Domain': excluded_domains}
+    tv = utl.filter_df(tv, include_filters, include=True)
+    tv = utl.filter_df(tv, exclude_filters, include=False)
+    agg_col = ['Count']
+    # grouping_cols = ['Domain', 'Performing Zone', 'LIS', 'Month_Year']
+    grouping_cols = ['Domain', 'Performing Zone', 'Month_Year']
+    utl.file_agg_writer(tv, grouping_cols, agg_col, root='pre_processed\\volumes\\')
+    return
+
+
+def pre_process_apqa_data():
+    tv = pd.read_csv('input_data\\test_volumes\\APQA_volumes.tsv', sep='\t')
+    tv['Month_Year'] = pd.to_datetime(tv['Month_Year'], format='%Y-%m-%d')
+    tv['Domain'] = 'AP'
+    print tv
+    agg_col = ['Samples']
+    grouping_cols = ['Domain', 'Zone', 'Month_Year']
+    utl.file_agg_writer(tv, grouping_cols, agg_col, root='pre_processed\\volumes\\APQA_samples')
+    return
+
+
+def pre_process_plc_apqa_data():
+    tv = pd.read_csv('input_data\\test_volumes\\APQA_volumes.tsv', sep='\t')
+    tv['Month_Year'] = pd.to_datetime(tv['Month_Year'], format='%Y-%m-%d')
+    tv['Domain'] = 'AP'
+    included_performing_site = ['PLC']
+    include_filters = {'Site': included_performing_site}
+    tv = utl.filter_df(tv, include_filters, include=True)
+    print tv
+    agg_col = ['Samples']
+    grouping_cols = ['Domain', 'Zone', 'Month_Year']
+    utl.file_agg_writer(tv, grouping_cols, agg_col, root='pre_processed\\volumes\\APQA_samples')
+    return
+
+
+def pre_process_volumes_billing():
+    tv = pd.read_csv('input_data\\test_volumes\\billing_volumes.csv')
+    ref_dept = pd.read_csv('input_data\\reference_tables\\ref_dept_domain.csv')
+    tv = pd.merge(tv, ref_dept, on='Department')
+    tv['year_month'] = pd.to_datetime(tv['year_month'], format='%Y%m')
+    print tv
+    agg_col = ['Sum Of Count']
+    grouping_cols = ['Domain', 'Performing Zone', 'year_month']
+    utl.file_agg_writer(tv, grouping_cols, agg_col, root='processed\\volumes\\edmonton\\')
 
 
 def load_cls_expenses(root_dir='input_data/CLS_expenses/',
@@ -52,13 +127,20 @@ def conform_cls_expenses(df):
     df['site_cd'] = df['site_cd'].astype(int)
     df['fn_cd'] = df['fn_cd'].astype(np.int64)
 
-
     # Load Reference Tables
     ref_cls_cost_grouping = pd.read_csv('input_data/reference_tables/ref_cls_cost_grouping.csv')
     ref_site_muni = pd.read_csv('input_data/reference_tables/ref_site_codes.csv')
+    if ref_site_muni['site_cd'].unique().shape[0]  != ref_site_muni.shape[0]:
+        print 'WARNING, site-zone reference table has duplicates'
     ref_fn_cd = pd.read_csv('input_data/reference_tables/ref_fn_cd.csv')
+    if ref_fn_cd['fn_cd'].unique().shape[0] != ref_fn_cd.shape[0]:
+        print 'WARNING, functional_center-department reference table has duplicates'
     ref_dept_domain = pd.read_csv('input_data/reference_tables/ref_dept_domain.csv')
+    if ref_dept_domain['Department'].unique().shape[0] != ref_dept_domain.shape[0]:
+        print 'WARNING, department-domain reference table has duplicates'
     ref_muni_zone = pd.read_csv('input_data/reference_tables/ref_muni_zone.csv')
+    if ref_muni_zone['Municipality'].unique().shape[0] != ref_muni_zone.shape[0]:
+        print 'WARNING, municipal-zone reference table has duplicates'
     ref_muni_zone['Municipality'] = ref_muni_zone['Municipality'].apply(lambda x: str.title(x))
     ref_muni_zone['Zone'] = ref_muni_zone['Zone'].apply(lambda x: str.title(x))
 
@@ -77,6 +159,48 @@ def conform_cls_expenses(df):
     return df
 
 
+def conform_ahs_expenses(df):
+    # Parse Functional String
+    df['org_cd'] = -1
+    df['site_cd'] = -1
+    df['fn_cd'] = -1
+    df[['org_cd', 'site_cd', 'fn_cd']] = utl.parse_bill_code_df(df['bill_code'])
+    df['org_cd'] = df['org_cd'].astype(int)
+    df['site_cd'] = df['site_cd'].astype(int)
+    df['fn_cd'] = df['fn_cd'].astype(np.int64)
+
+    # Load Reference Tables
+    ref_cls_cost_grouping = pd.read_csv('input_data/reference_tables/ref_cls_cost_grouping.csv')
+    ref_site_muni = pd.read_csv('input_data/reference_tables/ref_site_codes.csv')
+    if ref_site_muni['site_cd'].unique().shape[0]  != ref_site_muni.shape[0]:
+        print 'WARNING, site-zone reference table has duplicates'
+    ref_fn_cd = pd.read_csv('input_data/reference_tables/ref_fn_cd.csv')
+    if ref_fn_cd['fn_cd'].unique().shape[0] != ref_fn_cd.shape[0]:
+        print 'WARNING, functional_center-department reference table has duplicates'
+    ref_dept_domain = pd.read_csv('input_data/reference_tables/ref_dept_domain.csv')
+    if ref_dept_domain['Department'].unique().shape[0] != ref_dept_domain.shape[0]:
+        print 'WARNING, department-domain reference table has duplicates'
+    ref_muni_zone = pd.read_csv('input_data/reference_tables/ref_muni_zone.csv')
+    if ref_muni_zone['Municipality'].unique().shape[0] != ref_muni_zone.shape[0]:
+        print 'WARNING, municipal-zone reference table has duplicates'
+    ref_muni_zone['Municipality'] = ref_muni_zone['Municipality'].apply(lambda x: str.title(x))
+    ref_muni_zone['Zone'] = ref_muni_zone['Zone'].apply(lambda x: str.title(x))
+
+    # Add Table Columns
+    # df = pd.merge(df, ref_cls_cost_grouping, on='source_file', how='left')
+    # df['cost'] = df['Actual MTD'] * df['multiplier']
+    # print 'WARNING: missing cost groupings for source files', df[df['multiplier'].isnull()]['source_file'].unique()
+    df = pd.merge(df, ref_site_muni, on='site_cd', how='left')
+    print 'WARNING: missing Municipalities for site codes:', df[df['Municipality'].isnull()]['site_cd'].unique()
+    df = pd.merge(df, ref_fn_cd, on='fn_cd', how='left')
+    print 'WARNING: missing Departments for functional centers:', df[df['Department'].isnull()]['fn_cd'].unique()
+    df = pd.merge(df, ref_dept_domain, on='Department', how='left')
+    print 'WARNING: missing Domains for site codes:', df[df['Domain'].isnull()]['Department'].unique()
+    df = pd.merge(df, ref_muni_zone, on='Municipality', how='left')
+    print 'WARNING: missing Zones for Municipality:', df[df['Zone'].isnull()]['Municipality'].unique()
+    return df
+
+
 def pre_process_cls_expenses():
     required_columns = ['Zone', 'Domain', 'cost_type', 'Fiscal Period', 'cost']
     combined = load_cls_expenses()
@@ -84,17 +208,6 @@ def pre_process_cls_expenses():
     combined = combined[required_columns]
     combined = combined.groupby(['Zone', 'Domain', 'Fiscal Period', 'cost_type'])['cost'].sum().unstack('cost_type')
     combined.to_csv('processed\\costs\\cls_expenses.csv')
-
-
-
-def format_cls_expenses():
-    combined = load_cls_expenses()
-    combined = conform_cls_expenses(combined)
-    agg_col = ['cost']
-    grouping_cols = ['cost_type', 'Domain', 'Zone', 'Fiscal Period']
-    combined['fiscal_year'] = combined['Fiscal Period'].apply(lambda x: utl.get_fiscal_year(x))
-    # grouping_cols = ['cost_type', 'Domain', 'Zone', 'fiscal_year']
-    utl.file_agg_writer(combined, grouping_cols, agg_col, root='processed\\costs\\')
 
 
 def format_ahs_expenses():
@@ -133,6 +246,13 @@ if __name__ == "__main__":
     # add_cls_expenses_conformed_columns(df)
     # format_cls_expenses()
     # utl.utl.parse_bill_code('221.0000.71105009975')
-    # print format_ahs_expenses()
+    # df = format_ahs_expenses()
+    # print conform_ahs_expenses(df)
+
     # print utl.get_fiscal_year(date(2008, 12, 24))
-    pre_process_cls_expenses()
+    # pre_process_cls_expenses()
+    # pre_process_apqa_data()
+    pre_process_plc_category_counts()
+    pre_process_plc_apqa_data()
+    # pre_process_volumes_billing()
+    # pre_process_plc_volumes_data()
