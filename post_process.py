@@ -67,8 +67,9 @@ def combine_data():
         plt.ylabel('Volume')
         plt.suptitle(utl.get_title(idx))
         # plt.show()
-    print output
-    output.to_csv('post_processed\\calgary_cost_projections.csv')
+    print output.stack()
+    output
+    output.stack().to_csv('post_processed\\calgary_cost_projections_stacked.csv')
     # output.to_csv('temp.csv')
 
 
